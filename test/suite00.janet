@@ -16,4 +16,7 @@
 (assert (= -0.005 (score "s" "as"))
         "score")
 
+(assert (> 0 score-min) "score-min")
+(assert (< 0 score-max) "score-max")
+
 (end-suite)

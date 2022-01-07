@@ -55,4 +55,8 @@ static const JanetReg cfuns[] = {
 
 JANET_MODULE_ENTRY(JanetTable *env) {
     janet_cfuns(env, "fzy", cfuns);
+    janet_def(env, "score-min", janet_wrap_integer(SCORE_MIN),
+              "Minimal possible score.");
+    janet_def(env, "score-max", janet_wrap_integer(SCORE_MAX),
+              "Maximal possible score.");
 }
