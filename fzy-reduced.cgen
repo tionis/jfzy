@@ -1,41 +1,52 @@
 (@ include <janet.h>)
+(@ include <ctype.h>)
 (@ include <stdlib.h>)
+(@ include <string.h>)
+(@ include <strings.h>)
+(@ include <stdio.h>)
 (@ include `"match.h"`)
 
-(defn *janet_bytes_to_cstring [(bv JanetByteView)] "const char"
-  (return (janet_string bv.bytes bv.len)))
+($ (defmacro def-cfun-with-needle-n-haystack [name & body]
+     ~(quote
+        [(defn [static] ,(symbol 'cfun_ name) [(argc int32_t) (*argv Janet)] Janet
+           (janet_fixarity argc 2)
+           (def bv JanetByteView nil)
+           (set bv (janet_getbytes argv 0))
+           (def *needle (const char) (janet_string bv.bytes bv.len))
+           (set bv (janet_getbytes argv 1))
+           (def *haystack (const char) (janet_string bv.bytes bv.len))
+           ,;body)])))
 
-(defn [static] cfun_has_match [(argc int32_t) (*argv Janet)] Janet
-  (janet_fixarity argc 2)
-  (def *needle (const char) (janet_bytes_to_cstring (janet_getbytes argv 0)))
-  (def *haystack (const char) (janet_bytes_to_cstring (janet_getbytes argv 1)))
-  (return (janet_wrap_boolean (has_match needle haystack))))
+# FZY code
+($ (def-cfun-with-needle-n-haystack has_match
+     (while *needle
+       (do
+         (def nch char *needle++)
+         (def "accept[3]" (const char) (array nch (toupper nch) 0))
+         (if (! (set haystack (strpbrk haystack accept)))
+           (return (janet_wrap_boolean 0)))
+         ++haystack))
+     (return (janet_wrap_boolean 1))))
 
-(defn [static] cfun_score [(argc int32_t) (*argv Janet)] Janet
-  (janet_fixarity argc 2)
-  (def *needle (const char) (janet_bytes_to_cstring (janet_getbytes argv 0)))
-  (def *haystack (const char) (janet_bytes_to_cstring (janet_getbytes argv 1)))
-  (return (janet_wrap_number (match needle haystack))))
+($ (def-cfun-with-needle-n-haystack score
+     (janet_wrap_number (match needle haystack))))
 
-(defn [static] cfun_positions [(argc int32_t) (*argv Janet)] Janet
-  (janet_fixarity argc 2)
-  (def *needle (const char) (janet_bytes_to_cstring (janet_getbytes argv 0)))
-  (def *haystack (const char) (janet_bytes_to_cstring (janet_getbytes argv 1)))
-  (def n int (strlen needle))
-  (def "positions[MATCH_MAX_LEN]" size_t nil)
-  (def i int 0)
-  (while (and (< i (+ n 1)) (< i MATCH_MAX_LEN))
-    (do
-      (set (index positions i) -1)
-      (++ i)))
-  (match_positions needle haystack (addr (index positions 0)))
-  (def *array JanetArray (janet_array 0))
-  (set i 0)
-  (while (not (== (index positions i) -1))
-    (do
-      (janet_array_push array (janet_wrap_number (index positions i)))
-      (++ i)))
-  (return (janet_wrap_array array)))
+($ (def-cfun-with-needle-n-haystack positions
+     (def n int (strlen needle))
+     (def "positions[MATCH_MAX_LEN]" size_t nil)
+     (def i int 0)
+     (while (and (< i (+ n 1)) (< i MATCH_MAX_LEN))
+       (do
+         (set (index positions i) -1)
+         (++ i)))
+     (match_positions needle haystack (addr (index positions 0)))
+     (def *array JanetArray (janet_array 0))
+     (set i 0)
+     (while (not (== (index positions i) -1))
+       (do
+         (janet_array_push array (janet_wrap_number (index positions i)))
+         (++ i)))
+     (return (janet_wrap_array array))))
 
 (def "cfuns[]" JanetReg
   (array

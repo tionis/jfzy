@@ -11,23 +11,6 @@
 
 #include "config.h"
 
-char *strcasechr(const char *s, char c) {
-	const char accept[3] = {c, toupper(c), 0};
-	return strpbrk(s, accept);
-}
-
-int has_match(const char *needle, const char *haystack) {
-	while (*needle) {
-		char nch = *needle++;
-
-		if (!(haystack = strcasechr(haystack, nch))) {
-			return 0;
-		}
-		haystack++;
-	}
-	return 1;
-}
-
 #define SWAP(x, y, T) do { T SWAP = x; x = y; y = SWAP; } while (0)
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
