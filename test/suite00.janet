@@ -3,9 +3,8 @@
 
 (start-suite 0)
 
-(assert (deep= (positions "s" "has")
-               @[2])
-        "positions")
+(assert (> 0 score-min) "score-min")
+(assert (< 0 score-max) "score-max")
 
 (assert (has-match "s" "as")
         "has-match")
@@ -16,7 +15,8 @@
 (assert (= -0.005 (score "s" "as"))
         "score")
 
-(assert (> 0 score-min) "score-min")
-(assert (< 0 score-max) "score-max")
+(assert (deep= (positions "s" "has")
+               @[2])
+        "positions")
 
 (end-suite)
