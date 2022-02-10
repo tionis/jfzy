@@ -1,6 +1,6 @@
 (@ include <janet.h>)
 (@ include <stdlib.h>)
-(@ include "\"match.h\"")
+(@ include `"match.h"`)
 
 (defn *janet_bytes_to_cstring [(bv JanetByteView)] "const char"
   (return (janet_string bv.bytes bv.len)))
