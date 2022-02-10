@@ -36,23 +36,28 @@
      (def "positions[MATCH_MAX_LEN]" size_t nil)
      (def i int 0)
      (while (and (< i (+ n 1)) (< i MATCH_MAX_LEN))
-       (do
-         (set (index positions i) -1)
-         (++ i)))
+       (set (index positions i++) -1))
      (match_positions needle haystack (addr (index positions 0)))
      (def *array JanetArray (janet_array 0))
      (set i 0)
      (while (not (== (index positions i) -1))
-       (do
-         (janet_array_push array (janet_wrap_number (index positions i)))
-         (++ i)))
+       (janet_array_push array (janet_wrap_number (index positions i++))))
      (return (janet_wrap_array array))))
 
 (def "cfuns[]" JanetReg
   (array
-    (array "has-match" cfun_has_match "(has-match needle haystack)\n\nChecks if needle has match in haystack. Returns boolean.")
-    (array "score" cfun_score "(score needle haystack)\n\nComputes score for the needle in the haystack. Returns number.")
-    (array "positions" cfun_positions "(positions needle haystack)\n\nComputes positions for the needle in the haystack. Returns array of positions.")
+    (array "has-match" cfun_has_match
+           `(has-match needle haystack)
+
+            Checks if needle has match in haystack. Returns boolean.`)
+    (array "score" cfun_score
+           `(score needle haystack)
+
+            Computes score for the needle in the haystack. Returns number.`)
+    (array "positions" cfun_positions
+           `(positions needle haystack)
+
+            Computes positions for the needle in the haystack. Returns array of positions.`)
     (array NULL NULL NULL)))
 
 (defn JANET_MODULE_ENTRY [(env JanetTable*)] nil
