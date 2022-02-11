@@ -12,11 +12,15 @@
 (assert-not (has-match "Z" "as")
             "has not match")
 
-(assert (= -0.005 (score "s" "as"))
+(assert (= -0.015 (score "ss" "ases"))
         "score")
 
 (assert (deep= (positions "s" "has")
                @[2])
+        "positions")
+
+(assert (deep= (positions "as" "has")
+               @[1 2])
         "positions")
 
 (end-suite)

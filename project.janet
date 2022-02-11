@@ -17,4 +17,4 @@
 
 (declare-native
   :name "fzy"
-  :source @["fzy_reduced.c" "match.c"])
+  :source @["fzy_reduced.c"])
