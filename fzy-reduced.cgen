@@ -107,102 +107,7 @@
           (set (index curr_M j) prev_score)))
       ++j)))
 
-(defn match [(*needle (const char)) (*haystack (const char))] score_t
-  (if (not *needle) (return SCORE_MIN))
-  (def match (named-struct match_struct) nil)
-  (setup_match_struct (addr match) needle haystack)
-
-  (def n int match.needle_len)
-  (def m int match.haystack_len)
-
-  (if
-    (or (> m MATCH_MAX_LEN) (> n m))
-    (return SCORE_MIN)
-    (== n m)
-    (return SCORE_MAX))
-  (def "D[2][MATCH_MAX_LEN]" score_t nil)
-  (def "M[2][MATCH_MAX_LEN]" score_t nil)
-  (def *last_D score_t (index D 0))
-  (def *last_M score_t (index M 0))
-  (def *curr_D score_t (index D 1))
-  (def *curr_M score_t (index M 1))
-  (def i int 0)
-  (def *tmp score_t nil)
-  (while (< i n)
-    (do
-      (match_row (addr match) i curr_D curr_M last_D last_M)
-      (set tmp last_D)
-      (set last_D curr_D)
-      (set curr_D tmp)
-      (set tmp last_M)
-      (set last_M curr_M)
-      (set curr_M tmp)
-      ++i))
-
-  (return (index last_M (- m 1))))
-
-(defn match_positions [(*needle (const char)) (*haystack (const char)) (*positions size_t)] score_t
-  (if (not *needle) (return SCORE_MIN))
-  (def match (named-struct match_struct) nil)
-  (setup_match_struct (addr match) needle haystack)
-
-  (def n int match.needle_len)
-  (def m int match.haystack_len)
-
-  (if
-    (or (> m MATCH_MAX_LEN) (> n m))
-    (return SCORE_MIN)
-    (== n m)
-    (do
-      (if positions
-        (do
-          (def i int 0)
-          (while (< i n)
-            (do
-              (set (index positions i) i)
-              (++ i)))))
-      (return SCORE_MAX)))
-  (def "(*D)[MATCH_MAX_LEN]" score_t nil)
-  (def "(*M)[MATCH_MAX_LEN]" score_t nil)
-  (set M (janet_malloc (* (sizeof score_t) MATCH_MAX_LEN n)))
-  (set D (janet_malloc (* (sizeof score_t) MATCH_MAX_LEN n)))
-  (def *last_D score_t (index D 0))
-  (def *last_M score_t (index M 0))
-  (def *curr_D score_t (index D 1))
-  (def *curr_M score_t (index M 1))
-  (def i int 0)
-  (while (< i n)
-    (do
-      (set curr_D (addr (index (index D i) 0)))
-      (set curr_M (addr (index (index M i) 0)))
-      (match_row (addr match) i curr_D curr_M last_D last_M)
-      (set last_D curr_D)
-      (set last_M curr_M)
-      (++ i)))
-  (if positions
-    (do
-      (def match_required int 0)
-      (def i int (- n 1))
-      (def j int (- m 1))
-      (while (>= i 0)
-        (do
-          (while (>= j 0)
-            (do
-              (if (and (not (== (index (index D i) j) SCORE_MIN))
-                       (or match_required (== (index (index D i) j)
-                                              (index (index M i) j))))
-                (do
-                  (set match_required
-                       (and i j (== (index (index M i) j)
-                                    (+ (index (index D (- i 1)) (- j 1))
-                                       SCORE_MATCH_CONSECUTIVE))))
-                  (set (index positions i) j)
-                  (-- j)
-                  (break)))
-              (-- j)))
-          (-- i)))))
-  (def result score_t (index (index M (- n 1)) (- m 1)))
-  (return result))
+(defn match_positions [(*needle (const char)) (*haystack (const char)) (*positions size_t)] score_t)
 
 ($ (def-cfun-with-needle-n-haystack has-match
      ```
@@ -225,7 +130,37 @@
 
      Computes score for the needle in the haystack. Returns number.
      ```
-     (janet_wrap_number (match needle haystack))))
+     (if (not *needle) (return (janet_wrap_number SCORE_MIN)))
+     (def match (named-struct match_struct) nil)
+     (setup_match_struct (addr match) needle haystack)
+
+     (def n int match.needle_len)
+     (def m int match.haystack_len)
+
+     (if
+       (or (> m MATCH_MAX_LEN) (> n m))
+       (return (janet_wrap_number SCORE_MIN))
+       (== n m)
+       (return (janet_wrap_number SCORE_MAX)))
+     (def "D[2][MATCH_MAX_LEN]" score_t nil)
+     (def "M[2][MATCH_MAX_LEN]" score_t nil)
+     (def *last_D score_t (index D 0))
+     (def *last_M score_t (index M 0))
+     (def *curr_D score_t (index D 1))
+     (def *curr_M score_t (index M 1))
+     (def i int 0)
+     (def *tmp score_t nil)
+     (while (< i n)
+       (do
+         (match_row (addr match) i curr_D curr_M last_D last_M)
+         (set tmp last_D)
+         (set last_D curr_D)
+         (set curr_D tmp)
+         (set tmp last_M)
+         (set last_M curr_M)
+         (set curr_M tmp)
+         ++i))
+     (return (janet_wrap_number (index last_M (- m 1))))))
 
 ($ (def-cfun-with-needle-n-haystack positions
      ```
@@ -233,16 +168,62 @@
 
      Computes positions for the needle in the haystack. Returns array of positions.
      ```
-     (def n int (strlen needle))
-     (def "positions[MATCH_MAX_LEN]" size_t nil)
-     (def i int 0)
-     (while (and (< i (+ n 1)) (< i MATCH_MAX_LEN))
-       (set (index positions i++) -1))
-     (match_positions needle haystack (addr (index positions 0)))
      (def *array JanetArray (janet_array 0))
-     (set i 0)
-     (while (not (== (index positions i) -1))
-       (janet_array_push array (janet_wrap_number (index positions i++))))
+     (if (not *needle) (return (janet_wrap_array array)))
+     (def match (named-struct match_struct) nil)
+     (setup_match_struct (addr match) needle haystack)
+
+     (def n int match.needle_len)
+     (def m int match.haystack_len)
+
+     (if
+       (or (> m MATCH_MAX_LEN) (> n m))
+       (return (janet_wrap_array array))
+       (== n m)
+       (do
+         (def i int 0)
+         (while (< i n)
+           (do
+             (janet_array_push array (janet_wrap_number i))
+             (++ i)))
+         (return (janet_wrap_array array))))
+     (def "(*D)[MATCH_MAX_LEN]" score_t nil)
+     (def "(*M)[MATCH_MAX_LEN]" score_t nil)
+     (set M (janet_malloc (* (sizeof score_t) MATCH_MAX_LEN n)))
+     (set D (janet_malloc (* (sizeof score_t) MATCH_MAX_LEN n)))
+     (def *last_D score_t (index D 0))
+     (def *last_M score_t (index M 0))
+     (def *curr_D score_t (index D 1))
+     (def *curr_M score_t (index M 1))
+     (def i int 0)
+     (while (< i n)
+       (do
+         (set curr_D (addr (index (index D i) 0)))
+         (set curr_M (addr (index (index M i) 0)))
+         (match_row (addr match) i curr_D curr_M last_D last_M)
+         (set last_D curr_D)
+         (set last_M curr_M)
+         (++ i)))
+     (def match_required int 0)
+     (set i (- n 1))
+     (def j int (- m 1))
+     (while (>= i 0)
+       (do
+         (while (>= j 0)
+           (do
+             (if (and (not (== (index (index D i) j) SCORE_MIN))
+                      (or match_required (== (index (index D i) j)
+                                             (index (index M i) j))))
+               (do
+                 (set match_required
+                      (and i j (== (index (index M i) j)
+                                   (+ (index (index D (- i 1)) (- j 1))
+                                      SCORE_MATCH_CONSECUTIVE))))
+                 (janet_array_push array (janet_wrap_number j))
+                 (-- j)
+                 (break)))
+             (-- j)))
+         (-- i)))
      (return (janet_wrap_array array))))
 
 ($ (def-cfuns))

@@ -19,8 +19,8 @@
                @[2])
         "positions")
 
-(assert (deep= (positions "as" "has")
+(assert (deep= (tracev (positions "as" "has"))
                @[1 2])
-        "positions")
+        "positions l")
 
 (end-suite)
