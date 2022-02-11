@@ -1,10 +1,5 @@
 (@ include <janet.h>)
 (@ include <ctype.h>)
-(@ include <stdlib.h>)
-(@ include <string.h>)
-(@ include <strings.h>)
-(@ include <stdio.h>)
-
 (@ define SCORE_MAX INFINITY)
 (@ define SCORE_MIN -INFINITY)
 (@ define MATCH_MAX_LEN 1024)
@@ -41,7 +36,9 @@
   (while (index haystack i)
     (do
       (def ch char (index haystack i))
-      (set (index match_bonus i) (index (index bonuss_states (index bonuss_index ch)) last_ch))
+      (set (index match_bonus i)
+           (index (index bonuss_states
+                         (index bonuss_index ch)) last_ch))
       (set last_ch ch)
       ++i)))
 
@@ -51,8 +48,9 @@
   (set match->needle_len (strlen needle))
   (set match->haystack_len (strlen haystack))
 
-  (if (or (> match->haystack_len MATCH_MAX_LEN) (> match->needle_len match->haystack_len))
-    (do)
+  (if (not
+        (or (> match->haystack_len MATCH_MAX_LEN)
+            (> match->needle_len match->haystack_len)))
     (do
       (def i int 0)
       (while (< i match->needle_len)
@@ -63,9 +61,8 @@
       (while (< i match->haystack_len)
         (do
           (set (index match->lower_haystack i) (tolower (index haystack i)))
-          (++ i)))))
-
-  (precompute_bonus haystack match->match_bonus))
+          (++ i)))
+      (precompute_bonus haystack match->match_bonus))))
 
 (defn [static inline] match_row
   [(*match (const (named-struct match_struct))) (row int)
@@ -106,8 +103,6 @@
           (set prev_score (+ prev_score gap_score))
           (set (index curr_M j) prev_score)))
       ++j)))
-
-(defn match_positions [(*needle (const char)) (*haystack (const char)) (*positions size_t)] score_t)
 
 ($ (def-cfun-with-needle-n-haystack has-match
      ```
@@ -169,6 +164,7 @@
      Computes positions for the needle in the haystack. Returns array of positions.
      ```
      (def *array JanetArray (janet_array 0))
+     (def warr Janet (janet_wrap_array array))
      (if (not *needle) (return (janet_wrap_array array)))
      (def match (named-struct match_struct) nil)
      (setup_match_struct (addr match) needle haystack)
@@ -186,7 +182,7 @@
            (do
              (janet_array_push array (janet_wrap_number i))
              (++ i)))
-         (return (janet_wrap_array array))))
+         (return warr)))
      (def "(*D)[MATCH_MAX_LEN]" score_t nil)
      (def "(*M)[MATCH_MAX_LEN]" score_t nil)
      (set M (janet_malloc (* (sizeof score_t) MATCH_MAX_LEN n)))
@@ -219,17 +215,17 @@
                       (and i j (== (index (index M i) j)
                                    (+ (index (index D (- i 1)) (- j 1))
                                       SCORE_MATCH_CONSECUTIVE))))
-                 (janet_array_push array (janet_wrap_number j))
+                 (janet_putindex warr i (janet_wrap_number j))
                  (-- j)
                  (break)))
              (-- j)))
          (-- i)))
-     (return (janet_wrap_array array))))
+     (janet_free D)
+     (janet_free M)
+     (return warr)))
 
 ($ (def-cfuns))
 
 
 (defn JANET_MODULE_ENTRY [(env JanetTable*)] nil
-  (janet_cfuns env "fzy" cfuns)
-  (janet_def env "score-min" (janet_wrap_integer SCORE_MIN) "Minimal possible score.")
-  (janet_def env "score-max" (janet_wrap_integer SCORE_MAX) "Maximal possible score."))
+  (janet_cfuns env "fzy" cfuns))

@@ -3,9 +3,6 @@
 
 (start-suite 0)
 
-(assert (> 0 score-min) "score-min")
-(assert (< 0 score-max) "score-max")
-
 (assert (has-match "s" "as")
         "has-match")
 
@@ -19,7 +16,7 @@
                @[2])
         "positions")
 
-(assert (deep= (tracev (positions "as" "has"))
+(assert (deep= (positions "as" "has")
                @[1 2])
         "positions l")
 
