@@ -21,12 +21,12 @@
         (array NULL NULL NULL)))))
 
 (def punctuation
-  (seq [l :in ["['/'] = SCORE_MATCH_SLASH"
-               "['-'] = SCORE_MATCH_WORD"
-               "['_'] = SCORE_MATCH_WORD"
-               "[' '] = SCORE_MATCH_WORD"
-               "['.'] = SCORE_MATCH_DOT"]]
-    ~(literal ,l)))
+  (seq [[c s] :in [["/" "SCORE_MATCH_SLASH"]
+                   ["-" "SCORE_MATCH_WORD"]
+                   ["_" "SCORE_MATCH_WORD"]
+                   [" " "SCORE_MATCH_WORD"]
+                   ["." "SCORE_MATCH_DOT"]]]
+    ~(literal ,(string "['" c "'] = " s))))
 
 (defn assign-lower [v]
   (seq [c :range [97 123]]
@@ -49,6 +49,6 @@
 
 (def bonus-index
   ~((def "bonuss_index[256]" (const size_t)
-      (array ,;(assign-upper 2)
-             ,;(assign-lower 1)
-             ,;(assign-digit 1)))))
+      (array ,;(assign-digit 1)
+             ,;(assign-upper 2)
+             ,;(assign-lower 1)))))

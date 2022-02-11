@@ -21,7 +21,113 @@
 ($ bonus-states)
 ($ bonus-index)
 
-# FZY code
+(def nil
+  (named-struct match_struct
+                needle_len int
+                haystack_len int
+                "lower_needle[MATCH_MAX_LEN]" char
+                "lower_haystack[MATCH_MAX_LEN]" char
+                "match_bonus[MATCH_MAX_LEN]" score_t) nil)
+
+(defn [static] precompute_bonus [(*haystack (const char)) (*match_bonus score_t)] void
+  (def last_ch char (literal "'/'"))
+  (def i int 0)
+  (while (index haystack i)
+    (do
+      (def ch char (index haystack i))
+      (set (index match_bonus i) (index (index bonuss_states (index bonuss_index ch)) last_ch))
+      (set last_ch ch)
+      ++i)))
+
+(defn [static] setup_match_struct
+  [(*match (named-struct match_struct))
+   (*needle (const char)) (*haystack (const char))] void
+  (set match->needle_len (strlen needle))
+  (set match->haystack_len (strlen haystack))
+
+  (def i int 0)
+  (if (not (or (> match->haystack_len MATCH_MAX_LEN) (> match->needle_len match->haystack_len)))
+    (do
+      (while (< i match->needle_len)
+        (set (index match->lower_needle i) (tolower (index needle i++))))
+      (set i 0)
+      (while (< i match->haystack_len)
+        (set (index match->lower_haystack i) (tolower (index haystack i++))))))
+
+  (precompute_bonus haystack match->match_bonus))
+
+(defn
+  [static inline] match_row [(*match (const (named-struct match_struct))) (row int) (*curr_D score_t) (*curr_M score_t) (*last_D (const score_t)) (*last_M (const score_t))] void
+  (def n int match->needle_len)
+  (def m int match->haystack_len)
+  (def i int row)
+  (def *lower_needle (const char) match->lower_needle)
+  (def *lower_haystack (const char) match->lower_haystack)
+  (def *match_bonus (const score_t) match->match_bonus)
+
+  (def prev_score score_t SCORE_MIN)
+  (def gap_score score_t nil)
+  (if (== i (- n 1))
+    (set gap_score SCORE_GAP_TRAILING)
+    (set gap_score SCORE_GAP_INNER))
+  (def j int 0)
+  (while (< j m)
+    (do
+      (if (== (index lower_needle i) (index lower_haystack j))
+        (do
+          (def score score_t SCORE_MIN)
+          (if (not i)
+            (set score (+ (* j SCORE_GAP_LEADING) (index match_bonus j)))
+            (do
+              (def a int (+ (index last_M (- j 1)) (index match_bonus j)))
+              (def b int (+ (index last_D (- j 1)) SCORE_MATCH_CONSECUTIVE))
+              (if (> a b) (set score a) (set score b))))
+          (set (index curr_D j) score)
+          (if (> score (+ prev_score gap_score))
+            (set prev_score score)
+            (set prev_score (+ prev_score gap_score)))
+
+          (set (index curr_M j) prev_score)))
+      ++j)))
+
+(defn matchh [(*needle (const char)) (*haystack (const char))] score_t
+  (if (not *needle) (return SCORE_MIN))
+  (def match (named-struct match_struct) nil)
+  (setup_match_struct (addr match) needle haystack)
+
+  (def n int match.needle_len)
+  (def m int match.haystack_len)
+
+  (if (or (> m MATCH_MAX_LEN) (> n m))
+    (return SCORE_MIN)
+    (== n m)
+    (return SCORE_MAX))
+  (def "D[2][MATCH_MAX_LEN]" score_t nil)
+  (def "M[2][MATCH_MAX_LEN]" score_t nil)
+  (def *last_D score_t nil)
+  (def *last_M score_t nil)
+  (def *curr_D score_t nil)
+  (def *curr_M score_t nil)
+  (set last_D (index D 0))
+  (set last_M (index M 0))
+  (set curr_D (index D 1))
+  (set curr_M (index M 1))
+
+  (def i int 0)
+  (while (<= i n)
+    (do
+      (match_row (addr match) i curr_D curr_M last_D last_M)
+      (def *tmp score_t nil)
+      (set tmp last_D)
+      (set last_D curr_D)
+      (set curr_D tmp)
+      (set tmp last_M)
+      (set last_M curr_M)
+      (set curr_M tmp)
+      ++i))
+
+  (return (index last_M (- m 1))))
+
 ($ (def-cfun-with-needle-n-haystack has-match
      ```
      (has-match needle haystack)
@@ -43,7 +149,7 @@
 
      Computes score for the needle in the haystack. Returns number.
      ```
-     (janet_wrap_number (match needle haystack))))
+     (janet_wrap_number (matchh needle haystack))))
 
 ($ (def-cfun-with-needle-n-haystack positions
      ```
