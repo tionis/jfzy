@@ -6,19 +6,15 @@
 (@ include <stdio.h>)
 (@ include `"match.h"`)
 
-($ (defmacro def-cfun-with-needle-n-haystack [name & body]
-     ~(quote
-        [(defn [static] ,(symbol 'cfun_ name) [(argc int32_t) (*argv Janet)] Janet
-           (janet_fixarity argc 2)
-           (def bv JanetByteView nil)
-           (set bv (janet_getbytes argv 0))
-           (def *needle (const char) (janet_string bv.bytes bv.len))
-           (set bv (janet_getbytes argv 1))
-           (def *haystack (const char) (janet_string bv.bytes bv.len))
-           ,;body)])))
+($ (use ./code))
 
 # FZY code
-($ (def-cfun-with-needle-n-haystack has_match
+($ (def-cfun-with-needle-n-haystack has-match
+     ```
+     (has-match needle haystack)
+
+     Checks if needle has match in haystack. Returns boolean.
+     ```
      (while *needle
        (do
          (def nch char *needle++)
@@ -29,9 +25,19 @@
      (return (janet_wrap_boolean 1))))
 
 ($ (def-cfun-with-needle-n-haystack score
+     ```
+     (score needle haystack)
+
+     Computes score for the needle in the haystack. Returns number.
+     ```
      (janet_wrap_number (match needle haystack))))
 
 ($ (def-cfun-with-needle-n-haystack positions
+     ```
+     (positions needle haystack)
+
+     Computes positions for the needle in the haystack. Returns array of positions.
+     ```
      (def n int (strlen needle))
      (def "positions[MATCH_MAX_LEN]" size_t nil)
      (def i int 0)
@@ -44,21 +50,8 @@
        (janet_array_push array (janet_wrap_number (index positions i++))))
      (return (janet_wrap_array array))))
 
-(def "cfuns[]" JanetReg
-  (array
-    (array "has-match" cfun_has_match
-           `(has-match needle haystack)
+($ (def-cfuns))
 
-            Checks if needle has match in haystack. Returns boolean.`)
-    (array "score" cfun_score
-           `(score needle haystack)
-
-            Computes score for the needle in the haystack. Returns number.`)
-    (array "positions" cfun_positions
-           `(positions needle haystack)
-
-            Computes positions for the needle in the haystack. Returns array of positions.`)
-    (array NULL NULL NULL)))
 
 (defn JANET_MODULE_ENTRY [(env JanetTable*)] nil
   (janet_cfuns env "fzy" cfuns)
