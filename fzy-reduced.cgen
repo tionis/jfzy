@@ -104,20 +104,24 @@
           (set (index curr_M j) prev_score)))
       ++j)))
 
+(defn [static inline] _has_match [(*needle (const char)) (*haystack (const char))] int
+  (while *needle
+    (do
+      (def nch char *needle++)
+      (def "accept[3]" (const char) (array nch (toupper nch) 0))
+      (if (! (set haystack (strpbrk haystack accept)))
+        (return 0))
+      ++haystack))
+  (return 1))
+
 ($ (def-cfun-with-needle-n-haystack has-match
      ```
      (has-match needle haystack)
 
      Checks if needle has match in haystack. Returns boolean.
      ```
-     (while *needle
-       (do
-         (def nch char *needle++)
-         (def "accept[3]" (const char) (array nch (toupper nch) 0))
-         (if (! (set haystack (strpbrk haystack accept)))
-           (return (janet_wrap_boolean 0)))
-         ++haystack))
-     (return (janet_wrap_boolean 1))))
+
+     (return (janet_wrap_boolean (_has_match needle haystack)))))
 
 ($ (def-cfun-with-needle-n-haystack score
      ```
@@ -125,7 +129,8 @@
 
      Computes score for the needle in the haystack. Returns number.
      ```
-     (if (not *needle) (return (janet_wrap_number SCORE_MIN)))
+     (if (or (not *needle) (not (_has_match needle haystack)))
+       (return (janet_wrap_number SCORE_MIN)))
      (def match (named-struct match_struct) nil)
      (setup_match_struct (addr match) needle haystack)
 
@@ -163,15 +168,15 @@
 
      Computes positions for the needle in the haystack. Returns array of positions.
      ```
-     (def *array JanetArray (janet_array 0))
-     (def warr Janet (janet_wrap_array array))
-     (if (not *needle) (return (janet_wrap_array array)))
      (def match (named-struct match_struct) nil)
      (setup_match_struct (addr match) needle haystack)
-
      (def n int match.needle_len)
      (def m int match.haystack_len)
-
+     (def *array JanetArray (janet_array n))
+     (def warr Janet (janet_wrap_array array))
+     (if (or (not *needle)
+             (not (_has_match needle haystack)))
+       (return warr))
      (if
        (or (> m MATCH_MAX_LEN) (> n m))
        (return (janet_wrap_array array))
