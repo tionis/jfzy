@@ -15,10 +15,9 @@
 
 (defn def-cfuns []
   ~((def "cfuns[]" JanetReg
-      (array
-        ,;(seq [[name [fname doc]] :pairs funcs]
-            ~(array ,(string name) ,fname ,doc))
-        (array NULL NULL NULL)))))
+      @[,;(seq [[name [fname doc]] :pairs funcs]
+            ~@[,(string name) ,fname ,doc])
+        @[NULL NULL NULL]])))
 
 (def punctuation
   (seq [[c s] :in [["/" "SCORE_MATCH_SLASH"]
@@ -42,13 +41,13 @@
 
 (def bonus-states
   ~((def "bonuss_states[3][256]" (const score_t)
-      (array (array 0)
-             (array ,;punctuation)
-             (array ,;punctuation
-                    ,;(assign-lower "SCORE_MATCH_CAPITAL"))))))
+      @[@[0]
+        @[,;punctuation]
+        @[,;punctuation
+          ,;(assign-lower "SCORE_MATCH_CAPITAL")]])))
 
 (def bonus-index
   ~((def "bonuss_index[256]" (const size_t)
-      (array ,;(assign-digit 1)
-             ,;(assign-upper 2)
-             ,;(assign-lower 1)))))
+      @[,;(assign-digit 1)
+        ,;(assign-upper 2)
+        ,;(assign-lower 1)])))
