@@ -7,8 +7,7 @@
   :repo "git+https://git.sr.ht/~pepe/jfzy"
   :dependencies ["spork" "jpm"])
 
-(import jpm/cgen)
-(cgen/add-loader)
+(add-loader)
 (import /fzy-reduced)
 
 (task "fzy_reduced.c" []
