@@ -5,8 +5,7 @@
   :license "MIT"
   :url "https://git.sr.ht/~pepe/jfzy"
   :repo "git+https://git.sr.ht/~pepe/jfzy"
-  :dependencies ["spork" {:repo "https://github.com/pepe/jpm"
-                          :sha "722862743586b4252722ce27ff592cd05fc0a897"}])
+  :dependencies ["spork" "jpm"])
 
 (import jpm/cgen)
 (cgen/add-loader)
