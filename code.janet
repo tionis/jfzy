@@ -47,7 +47,7 @@
           ,;(assign-lower "SCORE_MATCH_CAPITAL")]])))
 
 (def bonus-index
-  ~((def (array bonuss_index 256) (const size_t)
+  ~((def "bonuss_index[256]" (const size_t)
       @[,;(assign-digit 1)
         ,;(assign-upper 2)
         ,;(assign-lower 1)])))
