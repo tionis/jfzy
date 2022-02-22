@@ -24,17 +24,17 @@
     match_struct
     needle_len int
     haystack_len int
-    "lower_needle[MATCH_MAX_LEN]" char
-    "lower_haystack[MATCH_MAX_LEN]" char
+    "lower_needle[MATCH_MAX_LEN]" uint8_t
+    "lower_haystack[MATCH_MAX_LEN]" uint8_t
     "match_bonus[MATCH_MAX_LEN]" score_t)
   nil)
 
 (defn [static] precompute_bonus
-  [(*haystack (const char)) (*match_bonus score_t)] void
-  (def last_ch char (literal "'/'"))
+  [(*haystack (const uint8_t)) (*match_bonus score_t)] void
+  (def last_ch uint8_t (literal "'/'"))
   (def i int 0)
   (while (index haystack i)
-    (def ch char (index haystack i))
+    (def ch uint8_t (index haystack i))
     (set (index match_bonus i)
          (index (index bonuss_states
                        (index bonuss_index ch)) last_ch))
@@ -43,7 +43,7 @@
 
 (defn [static] setup_match_struct
   [(*match (named-struct match_struct))
-   (*needle (const char)) (*haystack (const char))] void
+   (*needle (const uint8_t)) (*haystack (const uint8_t))] void
   (set match->needle_len (strlen needle))
   (set match->haystack_len (strlen haystack))
   (if (not
@@ -67,8 +67,8 @@
   (def n int match->needle_len)
   (def m int match->haystack_len)
   (def i int row)
-  (def *lower_needle (const char) match->lower_needle)
-  (def *lower_haystack (const char) match->lower_haystack)
+  (def *lower_needle (const uint8_t) match->lower_needle)
+  (def *lower_haystack (const uint8_t) match->lower_haystack)
   (def *match_bonus (const score_t) match->match_bonus)
   (def prev_score score_t SCORE_MIN)
   (def gap_score score_t nil)
@@ -98,10 +98,10 @@
         (set (index curr_M j) prev_score)))
     ++j))
 
-(defn [static inline] _has_match [(*needle (const char)) (*haystack (const char))] int
+(defn [static inline] _has_match [(*needle (const uint8_t)) (*haystack (const uint8_t))] int
   (while *needle
-    (def nch char *needle++)
-    (def "accept[3]" (const char) (array nch (toupper nch) 0))
+    (def nch uint8_t *needle++)
+    (def "accept[3]" (const uint8_t) (array nch (toupper nch) 0))
     (if (! (set haystack (strpbrk haystack accept)))
       (return 0))
     ++haystack)
