@@ -218,4 +218,4 @@
 (defn JANET_MODULE_ENTRY [(env JanetTable*)] nil
   (janet_def env "score-min" (janet_wrap_number SCORE_MIN) "Minimal possible score.")
   (janet_def env "score-max" (janet_wrap_number SCORE_MAX) "Maximal possible score.")
-  (janet_cfuns env "fzy" cfuns))
+  (janet_cfuns env "fzy" fzycfuns))

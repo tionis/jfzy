@@ -14,7 +14,7 @@
         ,;body)]))
 
 (defn def-cfuns []
-  ~((def "cfuns[]" JanetReg
+  ~((def "fzycfuns[]" JanetReg
       @[,;(seq [[name [fname doc]] :pairs funcs]
             ~@[,(string name) ,fname ,doc])
         @[NULL NULL NULL]])))
