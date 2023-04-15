@@ -7,12 +7,6 @@
   :repo "git+https://git.sr.ht/~pepe/jfzy"
   :dependencies ["spork"])
 
-(add-loader)
-(import /fzy-reduced)
-
-(task "fzy_reduced.c" []
-      (fzy-reduced/render "fzy_reduced.c"))
-
 (declare-native
   :name "fzy"
-  :source @["fzy_reduced.c"])
+  :source @["fzy.c"])
